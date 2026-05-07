@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LSV Consult Chat</title>
+</head>
+<body>
+    <h1>Chat App - Coming Soon</h1>
+    <p>API Status: <span id="status">Checking...</span></p>
+    <script>
+        fetch('/api/health')
+            .then(r => r.json())
+            .then(d => document.getElementById('status').textContent = d.message);
+    </script>
+</body>
+</html>
