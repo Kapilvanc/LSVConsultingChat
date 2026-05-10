@@ -1,15 +1,400 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>LSV Consult Chat</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mr. Penumarthi's Chatbot</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        /* STYLES GO HERE IN PART 2 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 800px;
+            height: 90vh;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: #1a73e8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .chat-header h1 {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .chat-header p {
+            font-size: 0.85rem;
+            opacity: 0.85;
+            margin-top: 4px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .message {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .message.user {
+            background: #1a73e8;
+            color: white;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .message.bot {
+            background: #f1f3f4;
+            color: #202124;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.system {
+            background: #fff3cd;
+            color: #856404;
+            align-self: center;
+            text-align: center;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            max-width: 90%;
+            padding: 10px 16px;
+        }
+
+        .session-info {
+            padding: 6px 16px;
+            background: #f8f9fa;
+            font-size: 0.75rem;
+            color: #888;
+            text-align: right;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .chat-input-area {
+            padding: 16px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            align-items: flex-end;
+        }
+
+        .chat-input-area textarea {
+            flex: 1;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            padding: 12px 18px;
+            font-size: 0.95rem;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            max-height: 120px;
+            min-height: 48px;
+        }
+
+        .chat-input-area textarea:focus {
+            border-color: #1a73e8;
+        }
+
+        .send-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .send-btn:hover { background: #1557b0; }
+        .send-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        .typing-indicator {
+            display: none;
+            align-self: flex-start;
+            padding: 12px 16px;
+            background: #f1f3f4;
+            border-radius: 18px;
+            border-bottom-left-radius: 4px;
+            gap: 4px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: #aaa;
+            border-radius: 50%;
+            animation: bounce 1.2s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-6px); }
+        }
+
+        @media (max-width: 600px) {
+            body { justify-content: flex-start; background: white; }
+            .chat-container { height: 100vh; border-radius: 0; box-shadow: none; }
+        }
+
+    </style>
 </head>
 <body>
-    <h1>Chat App - Coming Soon</h1>
-    <p>API Status: <span id="status">Checking...</span></p>
-    <script>
-        fetch('/api/health')
-            .then(r => r.json())
-            .then(d => document.getElementById('status').textContent = d.message);
-    </script>
+
+<div class="chat-container">
+    <div class="chat-header">
+        <h1>Welcome to Mr. Penumarthi's Chatbot</h1>
+        <p>Ask me anything about his experience, skills, and background</p>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+        <div class="typing-indicator" id="typingIndicator">
+            <span></span><span></span><span></span>
+        </div>
+    </div>
+
+    <div class="session-info" id="sessionInfo">Questions used: 0 / 5</div>
+
+    <div class="chat-input-area">
+        <textarea
+            id="messageInput"
+            placeholder="Type your message..."
+            rows="1"
+            onkeydown="handleKeyDown(event)"
+        ></textarea>
+        <button class="send-btn" id="sendBtn" onclick="sendMessage()">&#9658;</button>
+    </div>
+</div>
+
+<script>
+    let userName = null;
+    let currentQuestionCount = 0;
+
+    /* JAVASCRIPT GOES HERE IN PART 3 */
+    let sessionId = localStorage.getItem('chat_session_id');
+    let token = localStorage.getItem('auth_token');
+    let idleTimer;
+    const IDLE_TIMEOUT = 10 * 60 * 1000; // 10 minutes
+
+    // --- Idle timer ---
+    function resetIdleTimer() {
+        clearTimeout(idleTimer);
+        idleTimer = setTimeout(handleIdleTimeout, IDLE_TIMEOUT);
+    }
+
+    function handleIdleTimeout() {
+        localStorage.removeItem('chat_session_id');
+        localStorage.removeItem('auth_token');
+        sessionId = null;
+        token = null;
+        addMessage('system', 'Your session has expired due to inactivity. You can start a new conversation below.');
+        document.getElementById('sessionInfo').textContent = 'Session expired';
+    }
+
+    ['mousemove', 'keydown', 'click', 'touchstart'].forEach(event => {
+        document.addEventListener(event, resetIdleTimer);
+    });
+    resetIdleTimer();
+
+    function handleTokenFromUrl() {
+        const params = new URLSearchParams(window.location.search);
+        token = params.get('token');
+        if (token) {
+            localStorage.setItem('auth_token', token);
+            window.history.replaceState({}, document.title, '/');
+        }
+    }
+    
+    async function loadSession() 
+    {
+        if (!sessionId) {
+            addMessage('bot', "Hi! I'm here to answer questions about Mr. Penumarthi's professional background. What would you like to know?");
+            return;
+        }
+        try {
+            const resp = await fetch(`/api/chat/session/${sessionId}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        addMessage(msg.role === 'user' ? 'user' : 'bot', msg.content);
+                    });
+                    currentQuestionCount = data.question_count;
+                    updateSessionInfo(data.question_count);
+                } else {
+                    addMessage('bot', "Hi! I'm here to answer questions about Mr. Penumarthi's professional background. What would you like to know?");
+                }
+            }
+        } catch (e) {
+            addMessage('bot', "Hi! I'm here to answer questions about Mr. Penumarthi's professional background. What would you like to know?");
+        }
+    }
+
+    async function loadUserInfo() {
+        if (!token) return;
+        try {
+            const resp = await fetch('/api/auth/me', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (resp.ok) {
+                const user = await resp.json();
+                userName = user.full_name || user.email;
+                updateSessionInfo(currentQuestionCount);
+            } else {
+                // Token is invalid or expired — clear it
+                localStorage.removeItem('auth_token');
+                token = null;
+                userName = null;
+            }
+        } catch (e) {}
+    }
+
+
+    // --- Helpers ---
+    function handleKeyDown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    }
+
+    function addLoginPrompt() {
+        const messages = document.getElementById('chatMessages');
+        const typing = document.getElementById('typingIndicator');
+        const div = document.createElement('div');
+        div.className = 'message system';
+        div.innerHTML = `You have reached the 5-question limit. <a href="/api/auth/login/google?session_id=${sessionId}" style="color:#856404;font-weight:600;">Log in with Google</a> to continue.`;
+        messages.insertBefore(div, typing);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+    function addMessage(role, text) {
+        const messages = document.getElementById('chatMessages');
+        const typing = document.getElementById('typingIndicator');
+        const div = document.createElement('div');
+        div.className = `message ${role}`;
+        if (role === 'bot') {
+            div.innerHTML = marked.parse(text);
+        } else {
+            div.textContent = text;
+        }
+        messages.insertBefore(div, typing);
+        messages.scrollTop = messages.scrollHeight;
+    }
+
+
+    function setTyping(visible) {
+        const indicator = document.getElementById('typingIndicator');
+        indicator.style.display = visible ? 'flex' : 'none';
+        document.getElementById('chatMessages').scrollTop = 999999;
+    }
+
+    function updateSessionInfo(count) {
+        const info = document.getElementById('sessionInfo');
+        if (userName) {
+            info.textContent = `Welcome, ${userName} | Questions used: ${count} / 50`;
+        } else if (token) {
+            info.textContent = `Questions used: ${count} / 50`;
+        } else {
+            info.textContent = `Questions used: ${count} / 5`;
+        }
+    }
+
+
+    // --- Send message ---
+    async function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const btn = document.getElementById('sendBtn');
+        const text = input.value.trim();
+        if (!text) return;
+
+        input.value = '';
+        btn.disabled = true;
+        addMessage('user', text);
+        setTyping(true);
+        resetIdleTimer();
+
+        try {
+            const response = await fetch('/api/chat/message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: text, session_id: sessionId })
+            });
+
+            const data = await response.json();
+            setTyping(false);
+
+            if (data.session_id) {
+                sessionId = data.session_id;
+                localStorage.setItem('chat_session_id', sessionId);
+            }
+
+            if (data.message === 'limit_reached') {
+                addMessage('system', 'You have reached the 50-question limit for this session.');
+            } else if (data.response) {
+                addMessage('bot', data.response);
+            }
+            if (data.requires_login) {
+                addLoginPrompt();
+            }
+            currentQuestionCount = data.question_count;
+
+            updateSessionInfo(data.question_count);
+
+        } catch (err) {
+            setTyping(false);
+            addMessage('system', 'Something went wrong. Please try again.');
+        } finally {
+            btn.disabled = false;
+            input.focus();
+        }
+    }
+
+    handleTokenFromUrl();
+    loadUserInfo().then(() => loadSession());
+
+</script>
+
 </body>
 </html>

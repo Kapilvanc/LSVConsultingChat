@@ -1,21 +1,41 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from app.routes import chat, auth
+from app.database import engine, Base
 
-app = FastAPI()
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
-# Serve static files (your frontend)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app = FastAPI(
+    title="Mr. Penumarthi's Chatbot",
+    description="AI-powered chatbot for Q&A",
+    version="1.0.0"
+)
 
-@app.get("/")
-async def root():
-    return FileResponse("static/index.html")
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Configure this for production
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
-@app.get("/api/health")
-async def health():
-    return {"status": "ok", "message": "Chat API is running"}
+# Include routers
+app.include_router(chat.router, prefix="/api/chat", tags=["chat"])
+app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 
-# Your chat endpoint (we'll build this later)
-@app.post("/api/chat")
-async def chat(message: dict):
-    return {"response": "Echo: " + message.get("text", "")}
+# @app.get("/")
+# async def root():
+#     return {
+#         "message": "Portfolio Chatbot API",
+#         "status": "active",
+#         "docs": "/docs"
+#     }
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"}
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
