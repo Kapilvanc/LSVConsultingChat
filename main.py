@@ -3,9 +3,20 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from app.routes import chat, auth
 from app.database import engine, Base
+from sqlalchemy import text
 
 # Create database tables
+
+def run_migrations():
+    with engine.connect() as conn:
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR"))
+        conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id VARCHAR"))
+        conn.execute(text("ALTER TABLE users ALTER COLUMN hashed_password DROP NOT NULL"))
+        conn.commit()
+
 Base.metadata.create_all(bind=engine)
+run_migrations()
+
 
 app = FastAPI(
     title="Mr. Penumarthi's Chatbot",
