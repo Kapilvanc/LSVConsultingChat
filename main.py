@@ -8,6 +8,8 @@ from sqlalchemy import text
 # Create database tables
 
 def run_migrations():
+    if "sqlite" in str(engine.url):
+        return
     with engine.connect() as conn:
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_provider VARCHAR"))
         conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS oauth_id VARCHAR"))
