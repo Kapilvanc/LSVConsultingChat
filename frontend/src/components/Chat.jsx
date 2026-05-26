@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { marked } from 'marked'
+import { useAuth0 } from '@auth0/auth0-react'
 
 export default function Chat() {
   const [messages, setMessages] = useState([])
@@ -10,6 +11,7 @@ export default function Chat() {
   const [userName, setUserName] = useState(null)
   const [questionCount, setQuestionCount] = useState(0)
   const [disabled, setDisabled] = useState(false)
+  const { loginWithPopup, getIdTokenClaims } = useAuth0()
   const messagesEndRef = useRef(null)
   const idleTimerRef = useRef(null)
   const IDLE_TIMEOUT = 10 * 60 * 1000
@@ -81,6 +83,32 @@ export default function Chat() {
   const addBotMsg = (text) => setMessages(prev => [...prev, { role: 'bot', text, id: Date.now() }])
   const addSystemMsg = (text) => setMessages(prev => [...prev, { role: 'system', text, id: Date.now() }])
 
+  const handleLogin = async () => {
+    try {
+      await loginWithPopup()
+      const claims = await getIdTokenClaims()
+      const idToken = claims.__raw
+      const resp = await fetch('/api/auth/auth0/callback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_token: idToken, session_id: sessionId })
+      })
+      const data = await resp.json()
+      if (data.access_token) {
+        localStorage.setItem('auth_token', data.access_token)
+        setToken(data.access_token)
+        setUserName(data.user?.full_name || data.user?.email)
+        setMessages(prev => [
+          ...prev.filter(m => m.role !== 'login'),
+          { role: 'system', text: `Welcome, ${data.user?.full_name || data.user?.email}! You can now continue chatting.`, id: Date.now() }
+        ])
+      }
+    } catch (e) {
+      console.error('Login failed', e)
+    }
+  }
+
+
   const sendMessage = async () => {
     const text = input.trim()
     if (!text || disabled) return
@@ -112,7 +140,8 @@ export default function Chat() {
         setMessages(prev => [...prev, {
           role: 'login',
           sessionId: data.session_id || sessionId,
-          id: Date.now()
+          id: Date.now(),
+          onLogin: handleLogin
         }])
       }
       setQuestionCount(data.question_count || 0)
@@ -155,9 +184,22 @@ export default function Chat() {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="px-4 py-2 bg-white border-t border-slate-100 text-xs text-slate-400 text-right">
-            {sessionLabel}
+          <div className="px-4 py-2 bg-white border-t border-slate-100 text-xs text-slate-400 flex justify-between items-center">
+            <span>{sessionLabel}</span>
+            {userName && (
+              <button
+                onClick={() => {
+                  localStorage.removeItem('auth_token')
+                  localStorage.removeItem('chat_session_id')
+                  window.location.reload()
+                }}
+                className="text-red-400 hover:text-red-600 transition-colors"
+              >
+                Logout
+              </button>
+            )}
           </div>
+
 
           <div className="p-4 border-t border-slate-200 bg-white flex gap-3 items-end">
             <textarea
@@ -206,9 +248,9 @@ function Message({ msg }) {
     return (
       <div className="self-center bg-amber-50 text-amber-700 border border-amber-200 px-4 py-2.5 rounded-xl text-sm text-center max-w-[90%]">
         You have reached the 5-question limit.{' '}
-        <a href={`/api/auth/login/google?session_id=${msg.sessionId}`} className="font-semibold underline">
-          Log in with Google
-        </a>{' '}
+        <button onClick={msg.onLogin} className="font-semibold underline cursor-pointer bg-transparent border-none text-amber-700">
+          Log in
+        </button>{' '}
         to continue.
       </div>
     )
