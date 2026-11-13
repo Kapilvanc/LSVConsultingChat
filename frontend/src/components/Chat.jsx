@@ -16,8 +16,11 @@ export default function Chat() {
   const idleTimerRef = useRef(null)
   const IDLE_TIMEOUT = 10 * 60 * 1000
 
+  // Keep the newest message in view by scrolling the message box ONLY.
+  // (scrollIntoView also scrolled the whole page down to the chat on load.)
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const box = messagesEndRef.current?.parentElement
+    if (box) box.scrollTo({ top: box.scrollHeight, behavior: 'smooth' })
   }, [messages, isTyping])
 
   const resetIdleTimer = () => {
@@ -49,7 +52,7 @@ export default function Chat() {
     initializedRef.current = true
 
     if (!sessionId) {
-      addBotMsg("Hi! I'm here to answer questions about Venkat Penumarthi's professional background. What would you like to know?")
+      addBotMsg("Hi! I'm LSV Consulting's AI assistant. Ask me about our founder Venkat's data engineering experience, skills, or past projects.")
       return
     }
     fetch(`/api/chat/session/${sessionId}`)
@@ -63,10 +66,10 @@ export default function Chat() {
           })))
           setQuestionCount(data.question_count)
         } else {
-          addBotMsg("Hi! I'm here to answer questions about Venkat Penumarthi's professional background. What would you like to know?")
+          addBotMsg("Hi! I'm LSV Consulting's AI assistant. Ask me about our founder Venkat's data engineering experience, skills, or past projects.")
         }
       })
-      .catch(() => addBotMsg("Hi! I'm here to answer questions about Venkat Penumarthi's professional background. What would you like to know?"))
+      .catch(() => addBotMsg("Hi! I'm LSV Consulting's AI assistant. Ask me about our founder Venkat's data engineering experience, skills, or past projects."))
   }, [])
 
   useEffect(() => {
@@ -160,22 +163,22 @@ export default function Chat() {
     : `Questions used: ${questionCount} / 5`
 
   return (
-    <section id="chat" className="bg-white py-20 px-4">
+    <section id="chat" className="bg-white py-20 px-4 scroll-mt-16">
       <div className="max-w-3xl mx-auto">
         <div className="text-center mb-8">
-          <span className="text-indigo-600 font-semibold text-sm uppercase tracking-wide">
-            Ask me anything
+          <span className="text-blue-600 font-semibold text-sm uppercase tracking-widest">
+            Ask anything
           </span>
-          <h2 className="text-3xl font-bold text-slate-900 mt-2">Chat with my AI</h2>
+          <h2 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2">Talk to our AI</h2>
           <p className="text-slate-500 mt-2">
-            Trained on my professional background. Ask about my experience, skills, or projects.
+            Grounded in our founder's experience. Ask about past work, skills, or how we approach data problems.
           </p>
         </div>
 
         <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="bg-indigo-600 px-6 py-4">
-            <p className="text-white font-semibold">Venkat's AI Assistant</p>
-            <p className="text-indigo-200 text-sm">Powered by OpenAI · Built by Venkat</p>
+          <div className="bg-slate-950 px-6 py-4">
+            <p className="text-white font-semibold">LSV Consulting AI Assistant</p>
+            <p className="text-slate-400 text-sm">Powered by OpenAI · Built from scratch by Venkat</p>
           </div>
 
           <div className="h-96 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50">
@@ -203,7 +206,7 @@ export default function Chat() {
 
           <div className="p-4 border-t border-slate-200 bg-white flex gap-3 items-end">
             <textarea
-              className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-indigo-400 font-sans min-h-[44px] max-h-28"
+              className="flex-1 border border-slate-200 rounded-xl px-4 py-3 text-sm resize-none outline-none focus:border-blue-400 font-sans min-h-[44px] max-h-28"
               placeholder="Type your message..."
               rows={1}
               value={input}
@@ -218,7 +221,7 @@ export default function Chat() {
             <button
               onClick={sendMessage}
               disabled={disabled}
-              className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 text-white rounded-full w-11 h-11 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer"
+              className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white rounded-full w-11 h-11 flex items-center justify-center flex-shrink-0 transition-colors cursor-pointer"
             >
               ▶
             </button>
@@ -232,7 +235,7 @@ export default function Chat() {
 function Message({ msg }) {
   if (msg.role === 'user') {
     return (
-      <div className="self-end bg-indigo-600 text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm max-w-[75%]">
+      <div className="self-end bg-blue-600 text-white px-4 py-2.5 rounded-2xl rounded-br-sm text-sm max-w-[75%]">
         {msg.text}
       </div>
     )

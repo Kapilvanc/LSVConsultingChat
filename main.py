@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from app.routes import chat, auth
 from app.database import engine, Base
 from sqlalchemy import text
@@ -50,5 +51,12 @@ app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+# Client-side routes of the React app: serve index.html so a direct load or
+# refresh of /about works (the static mount below would otherwise 404).
+@app.get("/about", include_in_schema=False)
+@app.get("/about/", include_in_schema=False)
+async def spa_about():
+    return FileResponse("static/index.html")
 
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
