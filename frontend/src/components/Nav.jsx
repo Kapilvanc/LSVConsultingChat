@@ -26,9 +26,7 @@ export default function Nav({ path }) {
     <nav className="sticky top-0 z-50 bg-slate-950/95 backdrop-blur border-b border-white/10">
       <div className="relative max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2 text-white">
-          <span className="w-9 h-9 rounded-lg bg-blue-500 flex items-center justify-center text-xs font-bold">
-            LSV
-          </span>
+          <img src="/logo-mark.png" alt="LSV Consulting logo" className="w-9 h-9" />
           <span className="font-semibold tracking-tight">LSV Consulting</span>
         </Link>
 
